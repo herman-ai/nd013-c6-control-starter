@@ -6,6 +6,7 @@
 
 #include "pid_controller.h"
 #include <vector>
+#include <assert.h>
 #include <iostream>
 #include <math.h>
 
@@ -19,13 +20,25 @@ void PID::Init(double Kpi, double Kii, double Kdi, double output_lim_maxi, doubl
    /**
    * TODO: Initialize PID coefficients (and errors, if needed)
    **/
+  Kp = Kpi;
+  Ki = Kii;
+  Kd = Kdi;
+  output_min = output_lim_mini;
+  output_max = output_lim_maxi;
+  cte = 0.0;
+  icte = 0.0;
+  dcte = 0.0;
 }
 
 
-void PID::UpdateError(double cte) {
+void PID::UpdateError(double icte) {
    /**
    * TODO: Update PID errors based on cte.
    **/
+//   assert(delta_time > 0);
+  dcte = (icte - cte)/delta_time;
+  cte = icte;
+  icte += cte*delta_time;
 }
 
 double PID::TotalError() {
@@ -33,7 +46,11 @@ double PID::TotalError() {
    * TODO: Calculate and return the total error
     * The code should return a value in the interval [output_lim_mini, output_lim_maxi]
    */
-    double control;
+    double control = Kp*cte + Kd*dcte + Ki*icte;
+    if (control > output_max)
+      control = output_max;
+   if (control < output_min)
+      control = output_min;
     return control;
 }
 
@@ -41,4 +58,8 @@ double PID::UpdateDeltaTime(double new_delta_time) {
    /**
    * TODO: Update the delta time with new value
    */
+  if (new_delta_time == 0) {
+   cout << "*** WARNING: delta_time provided as 0, using default value of 1" << endl;
+  }
+  delta_time = new_delta_time > 0 ? new_delta_time : 1;
 }
